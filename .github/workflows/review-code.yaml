@@ -1,4 +1,4 @@
-name: Review PR Diff
+name: Comment on PR Diff
 
 on:
   pull_request:
@@ -26,26 +26,23 @@ jobs:
         run: |
           echo "Getting PR diff and file paths between base and head"
           
-          # Get the diff between the base and head branches
-          diff=$(git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }})
-          echo "$diff" > diff.txt  # Save to file to avoid multiline issues
+          # Get the diff between the base and head branches and store it in a file
+          git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
 
-          # Get the changed file paths
-          file_paths=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }})
-          echo "$file_paths" > file_paths.txt  # Save to file to avoid multiline issues
+          # Get the changed file paths and store them in a file
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-          # Set the outputs as environment variables using proper syntax
-          echo "diff<<EOF" >> $GITHUB_ENV
-          cat diff.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Set the outputs to be used in later steps
+          echo "DIFF_CONTENT=$(cat diff.txt)" >> $GITHUB_ENV
+          echo "FILE_PATHS=$(cat file_paths.txt)" >> $GITHUB_ENV
 
-          echo "file_paths<<EOF" >> $GITHUB_ENV
-          cat file_paths.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+      # Step 4: Print the diff and file paths for debugging
+      - name: Print PR Diff and File Paths for Debugging
+        run: |
+          echo "PR Diff: ${{ env.DIFF_CONTENT }}"
+          echo "Changed file paths: ${{ env.FILE_PATHS }}"
 
-
-
-      # Step 5: Send Diff and File Paths to ReviewMyCode API
+      # Step 5: Send PR Diff and File Paths to ReviewMyCode API
       - name: Send Diff and File Paths to ReviewMyCode API
         run: |
           echo "Sending PR diff and file paths to backend"
@@ -53,12 +50,12 @@ jobs:
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
-            "diff": "${{ env.diff }}",
+            "diff": "${{ env.DIFF_CONTENT }}",
             "owner": "${{ github.repository_owner }}",
             "repo": "${{ github.event.pull_request.head.repo.name }}",
             "prNumber": "${{ github.event.pull_request.number }}",
             "commitId": "${{ github.event.pull_request.head.sha }}",
-            "file_paths": "${{ env.file_paths }}"
+            "file_paths": "${{ env.FILE_PATHS }}"
           }
           EOF
           echo "Request sent to backend"
