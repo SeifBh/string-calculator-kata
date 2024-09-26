@@ -5,6 +5,7 @@ public class StringCalculatorStep4 {
         String delimiter = ",|\n";
         String numbersWithoutDelimiter = numbers;
         boolean newLine = true;
+
         if (numbers.startsWith("//")) {
             int delimiterIndex = numbers.indexOf("//") + 2;
             delimiter = numbers.substring(delimiterIndex, delimiterIndex + 1);

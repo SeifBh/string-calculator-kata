@@ -7,6 +7,7 @@ public class StringCalculatorStep4Test {
     public final void whenMoreThanTwoNumberThenRuntimeExceptionIsThrown() {
         StringCalculatorStep1.Add("1,2,3");
     }
+
     @Test
     public final void whenEmptyStringThenReturnZero() {
         Assert.assertEquals(0, StringCalculatorStep1.Add(""));

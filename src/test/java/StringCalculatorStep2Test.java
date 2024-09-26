@@ -3,10 +3,6 @@ import org.junit.Test;
 
 public class StringCalculatorStep2Test {
 
-//    @Test(expected = RuntimeException.class)
-//    public final void whenMoreThanTwoNumberThenRuntimeExceptionIsThrown() {
-//        StringCalculatorStep1.Add("1,2,3");
-//    }
 
     @Test
     public final void whenUnknownAmountOfNumbersRetrunSumOfValues() {

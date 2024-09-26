@@ -1,1 +1,1 @@
-## String-Calculator-Kata
+
