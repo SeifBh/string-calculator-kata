@@ -44,18 +44,18 @@ jobs:
       - name: Send Diff and File Paths to ReviewMyCode API
         run: |
           echo "Sending PR diff and file paths to backend"
-          diff_content=$(cat diff.txt)
-          file_paths=$(cat file_paths.txt)
+          diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
+          file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
           curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
-            "diff": "$diff_content",
+            "diff": $diff_content,
             "owner": "${{ github.repository_owner }}",
             "repo": "${{ github.event.pull_request.head.repo.name }}",
             "prNumber": "${{ github.event.pull_request.number }}",
             "commitId": "${{ github.event.pull_request.head.sha }}",
-            "file_paths": "$file_paths"
+            "file_paths": $file_paths
           }
           EOF
           echo "Request sent to backend"
