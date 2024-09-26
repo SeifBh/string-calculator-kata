@@ -32,30 +32,30 @@ jobs:
           # Get the changed file paths and store them in a file
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-          # Set the outputs to be used in later steps
-          echo "DIFF_CONTENT=$(cat diff.txt)" >> $GITHUB_ENV
-          echo "FILE_PATHS=$(cat file_paths.txt)" >> $GITHUB_ENV
-
-      # Step 4: Print the diff and file paths for debugging
+      # Step 4: Debugging - Print the diff and file paths
       - name: Print PR Diff and File Paths for Debugging
         run: |
-          echo "PR Diff: ${{ env.DIFF_CONTENT }}"
-          echo "Changed file paths: ${{ env.FILE_PATHS }}"
+          echo "PR Diff:"
+          cat diff.txt
+          echo "Changed file paths:"
+          cat file_paths.txt
 
       # Step 5: Send PR Diff and File Paths to ReviewMyCode API
       - name: Send Diff and File Paths to ReviewMyCode API
         run: |
           echo "Sending PR diff and file paths to backend"
+          diff_content=$(cat diff.txt)
+          file_paths=$(cat file_paths.txt)
           curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
-            "diff": "${{ env.DIFF_CONTENT }}",
+            "diff": "$diff_content",
             "owner": "${{ github.repository_owner }}",
             "repo": "${{ github.event.pull_request.head.repo.name }}",
             "prNumber": "${{ github.event.pull_request.number }}",
             "commitId": "${{ github.event.pull_request.head.sha }}",
-            "file_paths": "${{ env.FILE_PATHS }}"
+            "file_paths": "$file_paths"
           }
           EOF
           echo "Request sent to backend"
