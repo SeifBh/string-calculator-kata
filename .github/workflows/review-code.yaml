@@ -33,7 +33,7 @@ jobs:
         run: |
           diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
           file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
-          curl -X POST "http://localhost:8080/openai/api/v1/review-pr-diff" \
+          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
