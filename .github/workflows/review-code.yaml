@@ -28,25 +28,37 @@ jobs:
           git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
+      # Step 3.1: Debugging - Check if diff.txt is empty
+      - name: Check PR Diff File Content
+        run: cat diff.txt || echo "diff.txt is empty"
+
+      # Step 3.2: Debugging - Check if file_paths.txt is empty
+      - name: Check PR File Paths Content
+        run: cat file_paths.txt || echo "file_paths.txt is empty"
+
       # Step 4: Send PR Diff and File Paths to Backend for Review
       - name: Send Diff and File Paths to Backend for Review
         run: |
-          diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
-          file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
-          review_response=$(curl -s -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
-          -H "Content-Type: application/json" \
-          -d @- <<EOF
-          {
-            "diff": $diff_content,
-            "owner": "${{ github.repository_owner }}",
-            "repo": "${{ github.event.pull_request.head.repo.name }}",
-            "prNumber": "${{ github.event.pull_request.number }}",
-            "commitId": "${{ github.event.pull_request.head.sha }}",
-            "file_paths": $file_paths
-          }
-          EOF
-          )
+          if [ -s diff.txt ]; then
+            diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
+            file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
+            review_response=$(curl -s -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+            {
+              "diff": $diff_content,
+              "owner": "${{ github.repository_owner }}",
+              "repo": "${{ github.event.pull_request.head.repo.name }}",
+              "prNumber": "${{ github.event.pull_request.number }}",
+              "commitId": "${{ github.event.pull_request.head.sha }}",
+              "file_paths": $file_paths
+            }
+            EOF
+            )
 
-          # Parse and display the suggestions for each line of code from the review response
-          echo "PR Review Suggestions:"
-          echo "$review_response" | jq -r '.suggestions[] | "Line: \(.line) - Code: \(.codeLine)\nComment: \(.comment)\nSeverity: \(.severity)\n"'
+            # Parse and display the suggestions for each line of code from the review response
+            echo "PR Review Suggestions:"
+            echo "$review_response" | jq -r '.suggestions[] | "Line: \(.line) - Code: \(.codeLine)\nComment: \(.comment)\nSeverity: \(.severity)\n"'
+          else
+            echo "No changes detected or diff.txt is empty"
+          fi
