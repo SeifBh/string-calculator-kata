@@ -1,4 +1,4 @@
-name: Comment on PR Diff
+name: Review PR Diff
 
 on:
   pull_request:
@@ -20,40 +20,28 @@ jobs:
       - name: Fetch All History for Diff
         run: git fetch --all
 
-      # Step 3: Get PR Diff from GitHub API and Extract Valid Lines
-      - name: Get PR Diff from GitHub API
-        id: pr_diff
+      # Step 3: Get PR Diff and File Paths
+      - name: Get PR Diff and File Paths
+        id: diff
         run: |
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository_owner }}/${{ github.event.pull_request.head.repo.name }}/pulls/${{ github.event.pull_request.number }}/files" > files.json
-          cat files.json
+          echo "Getting PR diff and file paths between base and head"
+          git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-      # Step 4: Parse Diff and Send Comments for Valid Lines
-      - name: Send Comments to Valid Lines
+      # Step 4: Send PR Diff and File Paths to Backend for Review
+      - name: Send Diff and File Paths to Backend for Review
         run: |
-          # Parse the JSON response to get file paths and valid line numbers
-          file_path=$(jq -r '.[0].filename' files.json)
-          diff_hunk=$(jq -r '.[0].patch' files.json)
-
-          # Here you need to extract actual lines in the diff where comments will go
-          line_number=$(jq -r '.[0].changes' files.json) # Mock line number from the diff
-
-          echo "Sending PR diff comments to backend"
-          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
+          file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
+          curl -X POST "https://your-backend-api.com/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
-            "diff": "$diff_hunk",
-            "file_path": "$file_path",
-            "line": $line_number,
+            "diff": $diff_content,
             "owner": "${{ github.repository_owner }}",
             "repo": "${{ github.event.pull_request.head.repo.name }}",
             "prNumber": "${{ github.event.pull_request.number }}",
-            "commitId": "${{ github.event.pull_request.head.sha }}"
+            "commitId": "${{ github.event.pull_request.head.sha }}",
+            "file_paths": $file_paths
           }
           EOF
-          echo "Request sent to backend"
-
-      # Step 5: Mock success message
-      - name: Print Mock Review Result
-        run: echo "Mock review completed. Review comments have been sent."
