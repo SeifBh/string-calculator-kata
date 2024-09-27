@@ -1,3 +1,4 @@
+
 name: Review PR Diff
 
 on:
@@ -67,13 +68,13 @@ jobs:
             curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
               -H "Content-Type: application/json" \
               -d @- <<EOF
-              {
+              {{
                 "diff": $escaped_diff,
                 "owner": "${{ github.repository_owner }}",
                 "repo": "${{ github.event.pull_request.head.repo.name }}",
                 "prNumber": "${{ github.event.pull_request.number }}",
                 "commitId": "${{ github.event.pull_request.head.sha }}",
                 "file_paths": $escaped_file_path
-              }
-            EOF
-            done
+              }}
+  EOF
+  done
