@@ -13,6 +13,7 @@ import java.util.List;
     @NoArgsConstructor
     @AllArgsConstructor
     public class ChatRequest {
+        private List<Integer> okbla;
         private String model;
         private List<Message> messages;
         private int n;
