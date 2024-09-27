@@ -33,7 +33,7 @@ jobs:
         run: |
           diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
           file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
-          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          review_response=$(curl -s -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
           {
@@ -45,3 +45,8 @@ jobs:
             "file_paths": $file_paths
           }
           EOF
+          )
+
+          # Parse and display the suggestions for each line of code from the review response
+          echo "PR Review Suggestions:"
+          echo "$review_response" | jq -r '.suggestions[] | "Line: \(.line) - Code: \(.codeLine)\nComment: \(.comment)\nSeverity: \(.severity)\n"'
