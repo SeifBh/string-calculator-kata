@@ -1,4 +1,3 @@
-
 name: Review PR Diff
 
 on:
@@ -37,44 +36,20 @@ jobs:
           echo "File paths:"
           cat file_paths.txt  # Output the content of file_paths.txt
 
-      # Step 5: Split the Diff by File and Send to Backend for Review
-      - name: Send Diff for Each File to Backend for Review
+      # Step 5: Send PR Diff and File Paths to Backend for Review
+      - name: Send Diff and File Paths to Backend for Review
         run: |
-          # Read the diff and file paths
-          diff_content=$(cat diff.txt)
-          file_paths=$(cat file_paths.txt)
+          diff_content=$(cat diff.txt | jq -Rsa .)
+          file_paths=$(cat file_paths.txt | jq -Rsa .)
 
-          # Split the diff by file and send requests
-          for file_path in $(cat file_paths.txt); do
-            # Extract the diff for the current file
-            file_diff=$(awk "/^diff --git a\/$file_path/,/^diff --git/" diff.txt | head -n -1 || true)
-
-            # If file_diff is empty, skip it
-            if [ -z "$file_diff" ]; then
-              echo "No changes detected for file: $file_path"
-              continue
-            fi
-
-            # Escape the diff and file paths to JSON-safe strings
-            escaped_diff=$(echo "$file_diff" | jq -Rsa .)
-            escaped_file_path=$(echo "$file_path" | jq -Rsa .)
-
-            # Echo for debugging
-            echo "Sending review for file: $file_path"
-            echo "Diff content: $escaped_diff"
-            echo "File path: $escaped_file_path"
-
-            # Send request to backend
-            curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
-              -H "Content-Type: application/json" \
-              -d @- <<EOF
-              {{
-                "diff": $escaped_diff,
-                "owner": "${{ github.repository_owner }}",
-                "repo": "${{ github.event.pull_request.head.repo.name }}",
-                "prNumber": "${{ github.event.pull_request.number }}",
-                "commitId": "${{ github.event.pull_request.head.sha }}",
-                "file_paths": $escaped_file_path
-              }}
-  EOF
-  done
+          echo "Sending PR Diff for Review"
+          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "diff": '"$diff_content"',
+            "owner": "${{ github.repository_owner }}",
+            "repo": "${{ github.event.pull_request.head.repo.name }}",
+            "prNumber": "${{ github.event.pull_request.number }}",
+            "commitId": "${{ github.event.pull_request.head.sha }}",
+            "file_paths": '"$file_paths"'
+          }'
