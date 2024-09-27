@@ -1,10 +1,8 @@
-import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class StringCalculatorStep5 {
+public class StringCalculatorStep6 {
     public static final int Add(final String numbers) {
         String delimiter = ",|\n";
         String numbersWithoutDelimiter = numbers;

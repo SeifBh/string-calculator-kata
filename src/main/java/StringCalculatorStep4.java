@@ -4,6 +4,8 @@ public class StringCalculatorStep4 {
     public static final int Add(final String numbers) {
         String delimiter = ",|\n";
         String numbersWithoutDelimiter = numbers;
+        boolean newLine = true;
+
         if (numbers.startsWith("//")) {
             int delimiterIndex = numbers.indexOf("//") + 2;
             delimiter = numbers.substring(delimiterIndex, delimiterIndex + 1);

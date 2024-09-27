@@ -1,0 +1,47 @@
+name: Review PR Diff
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  reviewmycode:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the PR code
+      - name: Checkout PR Code
+        uses: actions/checkout@v2
+
+      # Step 2: Fetch all history for diff
+      - name: Fetch All History for Diff
+        run: git fetch --all
+
+      # Step 3: Get PR Diff and File Paths
+      - name: Get PR Diff and File Paths
+        id: diff
+        run: |
+          echo "Getting PR diff and file paths between base and head"
+          git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
+
+      # Step 4: Send PR Diff and File Paths to Backend for Review
+      - name: Send Diff and File Paths to Backend for Review
+        run: |
+          diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
+          file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
+          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          -H "Content-Type: application/json" \
+          -d @- <<EOF
+          {
+            "diff": $diff_content,
+            "owner": "${{ github.repository_owner }}",
+            "repo": "${{ github.event.pull_request.head.repo.name }}",
+            "prNumber": "${{ github.event.pull_request.number }}",
+            "commitId": "${{ github.event.pull_request.head.sha }}",
+            "file_paths": $file_paths
+          }
+          EOF

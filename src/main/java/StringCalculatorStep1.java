@@ -5,7 +5,8 @@ public class StringCalculatorStep1 {
         int returnValue = 0;
         String[] numbersArray = numbers.split(",");
         if (numbersArray.length > 2) {
-            throw new RuntimeException("Until 2 numbers seperated by commas is allowed");
+            throw new RuntimeException("Up to 2 numbers separated by comma (,) are allowed");
+
         } else {
             if (!numbers.isEmpty()) {
                 returnValue = Arrays.stream(numbersArray).mapToInt(Integer::parseInt).sum();
