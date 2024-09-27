@@ -28,11 +28,24 @@ jobs:
           git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-      # Step 4: Send PR Diff and File Paths to Backend for Review
+      # Step 4: Echo Diff and File Paths (Newly added)
+      - name: Echo Diff and File Paths
+        run: |
+          echo "Diff content:"
+          cat diff.txt  # Output the content of diff.txt
+          echo "File paths:"
+          cat file_paths.txt  # Output the content of file_paths.txt
+
+      # Step 5: Send PR Diff and File Paths to Backend for Review
       - name: Send Diff and File Paths to Backend for Review
         run: |
           diff_content=$(cat diff.txt | jq -Rsa .)  # Escape and convert diff to JSON-safe string
           file_paths=$(cat file_paths.txt | jq -Rsa .)  # Escape and convert file paths to JSON-safe string
+
+          # Echo the JSON-safe values before sending the request
+          echo "Escaped Diff Content: $diff_content"
+          echo "Escaped File Paths: $file_paths"
+
           curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d @- <<EOF
