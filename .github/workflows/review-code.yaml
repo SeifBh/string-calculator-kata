@@ -44,7 +44,7 @@ jobs:
           file_paths=$(cat file_paths.txt | jq -Rsa .)
 
           echo "Sending PR Diff for Review"
-          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          curl -X POST "https://app5-latest.onrender.com/openai/api/v2/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d '{
             "diff": '"$diff_content"',
