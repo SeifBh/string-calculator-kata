@@ -1,5 +1,3 @@
-package com.openai.models;
-
 public class ReviewResponse {
     private int line;
     private String comment;
