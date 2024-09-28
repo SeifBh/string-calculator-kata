@@ -21,12 +21,12 @@ jobs:
       - name: Fetch All History for Diff
         run: git fetch --all
 
-      # Step 3: Get PR Diff and File Paths
-      - name: Get PR Diff and File Paths
+      # Step 3: Get PR Diff and File Paths with Context
+      - name: Get PR Diff with Context
         id: diff
         run: |
-          echo "Getting PR diff and file paths between base and head"
-          git diff origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
+          echo "Getting PR diff with 3 lines of context"
+          git diff -U3 origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
       # Step 4: Echo Diff and File Paths
@@ -44,7 +44,7 @@ jobs:
           file_paths=$(cat file_paths.txt | jq -Rsa .)
 
           echo "Sending PR Diff for Review"
-          curl -X POST "https://app5-latest.onrender.com/openai/api/v1/review-pr-diff" \
+          curl -X POST "https://app5-latest.onrender.com/openai/api/v2/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d '{
             "diff": '"$diff_content"',
