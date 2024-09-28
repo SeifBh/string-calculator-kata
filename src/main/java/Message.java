@@ -8,4 +8,5 @@ import lombok.NoArgsConstructor;
 public class Message {
     private String role;
     private String content; // This is where the feedback content is stored
+    private String blablaCar; // This is where the feedback content is stored
 }
