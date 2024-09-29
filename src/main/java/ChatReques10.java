@@ -18,6 +18,7 @@ public class ChatReques10 {
     private int n;
     private double temperature;
     private List<?> blablavariable;
+    private List<?> hello;
 
     public boolean newMethod(String st1, String st2) {
         if (st1 == st2) {
