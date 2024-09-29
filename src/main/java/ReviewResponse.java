@@ -1,6 +1,16 @@
+import lombok.Data;
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
+@Data
 public class ReviewResponse {
     private int line;
     private String comment;
+
+    @Getter
+    String okbb;
+
 
     public ReviewResponse(int line, String comment) {
         this.line = line;
