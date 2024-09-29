@@ -9,6 +9,7 @@ on:
       - edited
     paths-ignore:
       - '.github/workflows/review-code.yaml'  # Ignore changes to this file
+      - 'other-file-you-want-to-ignore.txt'   # You can add more files if needed
 
 jobs:
   reviewmycode:
@@ -18,18 +19,28 @@ jobs:
       # Step 1: Checkout the PR code
       - name: Checkout PR Code
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Step 2: Fetch all history for diff
       - name: Fetch All History for Diff
-        run: git fetch --all
+        run: |
+          echo "Fetching all history"
+          git fetch --all
 
       # Step 3: Get PR Diff with Full Content for Each File (Show changes and whole file if new)
       - name: Get PR Diff with Full Content for Each File
         id: diff
         run: |
           echo "Getting full diff for added and modified files"
-          git diff --cached --diff-filter=AM > full_diff.txt # Includes added and modified files
-          git diff --name-only --cached --diff-filter=AM > file_paths.txt # Get only added/modified files paths
+          git diff --cached --diff-filter=AM > full_diff.txt  # Includes added and modified files
+          git diff --name-only --cached --diff-filter=AM > file_paths.txt  # Get only added/modified files paths
+
+          echo "Full Diff:"
+          cat full_diff.txt  # Display the full diff for debugging
+
+          echo "Modified/Added Files:"
+          cat file_paths.txt  # Display the file paths for debugging
 
       # Step 4: Loop through each file and send the diff and full content to the API
       - name: Send Full Content and Diff for Each File
@@ -37,18 +48,28 @@ jobs:
           while IFS= read -r file; do
             echo "Processing file: $file"
 
-            # Get the full content of the file
+            # Check if the file exists before proceeding
             if [ -f "$file" ]; then
               full_content=$(cat "$file" | jq -Rsa .)
+              echo "Full content for $file:"
+              cat "$file"  # Display full file content for debugging
             else
+              echo "File $file does not exist."
               full_content="null"
             fi
 
             # Get the diff for the file
             file_diff=$(git diff --cached "$file" | jq -Rsa .)
+            echo "Diff for $file:"
+            git diff --cached "$file"  # Display the diff for debugging
+
+            # Debug the request content before sending
+            echo "Sending the following data to the API:"
+            echo "File: $file"
+            echo "Full Content: $full_content"
+            echo "Diff: $file_diff"
 
             # Send the full content and diff to the backend for review
-            echo "Sending PR Diff for $file"
             curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
               -H "Content-Type: application/json" \
               -d '{
