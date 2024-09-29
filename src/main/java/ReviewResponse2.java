@@ -1,18 +1,8 @@
-import lombok.Data;
-import lombok.Getter;
-import lombok.ToString;
-
-@ToString
-@Data
-public class ReviewResponse {
+public class ReviewResponse2 {
     private int line;
     private String comment;
 
-    @Getter
-    String okbb;
-
-
-    public ReviewResponse(int line, String comment) {
+    public ReviewResponse2(int line, String comment) {
         this.line = line;
         this.comment = comment;
     }
