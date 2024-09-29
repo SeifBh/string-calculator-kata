@@ -37,7 +37,7 @@ jobs:
             echo "Processing file: $file"
 
             # Fetch the full content of the file and number each line
-            nl "$file" > numbered_file_content.txt
+            nl -ba "$file" > numbered_file_content.txt
 
             # Process the diff for this file
             awk '
@@ -52,9 +52,12 @@ jobs:
               }
               /^[+] / {
                 new_file_line_number++
-                # Get the real line number from the actual file content
-                real_line_number=$(grep "^ *$new_file_line_number " numbered_file_content.txt | awk "{print $1}")
-                print "+" real_line_number ": " substr($0, 2)
+                real_line_number=$(grep "^ *" new_file_line_number " " numbered_file_content.txt | awk "{print $1}")
+                if (real_line_number) {
+                  print "+" real_line_number ": " substr($0, 2)
+                } else {
+                  print "+" new_file_line_number ": " substr($0, 2)
+                }
                 next
               }
               { print $0 }
