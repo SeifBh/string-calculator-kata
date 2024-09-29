@@ -41,7 +41,7 @@ jobs:
               # Fetch the full content of the file and number each line
               nl -ba "$file" > numbered_file_content.txt
 
-              # Process the diff for this file
+              # Loop through the diff and replace + lines with the actual numbered lines
               awk '
                 /^@@/ {
                   # Extract the line number range
@@ -54,7 +54,6 @@ jobs:
                 }
                 /^[+] / {
                   new_file_line_number++
-                  # Get the real line number from the numbered file content
                   real_line_number=$(grep "^ *$new_file_line_number " numbered_file_content.txt | awk "{print $1}")
                   if (real_line_number != "") {
                     print "+" real_line_number ": " substr($0, 2)
@@ -64,7 +63,9 @@ jobs:
                   next
                 }
                 { print $0 }
-              ' diff.txt > numbered_diff.txt
+              ' diff.txt > temp_diff.txt
+
+              mv temp_diff.txt numbered_diff.txt
             else
               echo "File $file does not exist."
             fi
