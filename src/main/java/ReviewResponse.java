@@ -2,6 +2,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.List;
+
 @ToString
 @Data
 public class ReviewResponse {
@@ -31,5 +33,17 @@ public class ReviewResponse {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    private String model;
+    private List<?> messages;
+    private int n;
+    private double temperature;
+
+    public boolean newMethod(String st1 ,String st2){
+        if(st1 == st2){
+            return true;
+        }
+        return false;
     }
 }
