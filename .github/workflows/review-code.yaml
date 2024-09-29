@@ -9,7 +9,7 @@ on:
       - edited
     paths-ignore:
       - '.github/workflows/review-code.yaml'  # Ignore changes to this file
-      - 'other-file-you-want-to-ignore.txt'   # You can add more files if needed
+      - 'other-file-you-want-to-ignore.txt'   # Add any other files you want to ignore
 
 jobs:
   reviewmycode:
@@ -28,7 +28,7 @@ jobs:
           echo "Fetching all history"
           git fetch --all
 
-      # Step 3: Get PR Diff with Full Content for Each File (Show changes and whole file if new)
+      # Step 3: Get PR Diff and Full Content for Each File (Show changes and whole file if new)
       - name: Get PR Diff with Full Content for Each File
         id: diff
         run: |
@@ -50,7 +50,7 @@ jobs:
 
             # Check if the file exists before proceeding
             if [ -f "$file" ]; then
-              full_content=$(cat "$file" | jq -Rsa .)
+              full_content=$(cat "$file" | jq -Rsa .)  # Get full file content and format it as JSON-safe
               echo "Full content for $file:"
               cat "$file"  # Display full file content for debugging
             else
@@ -59,7 +59,7 @@ jobs:
             fi
 
             # Get the diff for the file
-            file_diff=$(git diff --cached "$file" | jq -Rsa .)
+            file_diff=$(git diff --cached "$file" | jq -Rsa .)  # Get the diff and format it as JSON-safe
             echo "Diff for $file:"
             git diff --cached "$file"  # Display the diff for debugging
 
@@ -76,9 +76,9 @@ jobs:
                 "file": "'"$file"'",
                 "full_content": '"$full_content"',
                 "diff": '"$file_diff"',
-                "owner": "${{ github.repository_owner }}",
-                "repo": "${{ github.event.pull_request.head.repo.name }}",
-                "prNumber": "${{ github.event.pull_request.number }}",
-                "commitId": "${{ github.event.pull_request.head.sha }}"
+                "owner": "'"${{ github.repository_owner }}"'",
+                "repo": "'"${{ github.event.pull_request.head.repo.name }}"'",
+                "prNumber": "'"${{ github.event.pull_request.number }}"'",
+                "commitId": "'"${{ github.event.pull_request.head.sha }}"'"
               }'
           done < file_paths.txt
