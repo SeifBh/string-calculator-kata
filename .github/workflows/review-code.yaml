@@ -36,21 +36,11 @@ jobs:
           while IFS= read -r file; do
             echo "Processing file: $file"
 
-            # Fetch the full content of the file to get actual line numbers
-            file_content=$(cat "$file")
-
-            # Prepare an associative array to store actual line numbers
-            declare -A line_map
-            current_line=0
-
-            # Populate the associative array with actual line numbers
-            while IFS= read -r line; do
-              current_line=$((current_line + 1))
-              line_map["$line"]=$current_line
-            done <<< "$file_content"
+            # Fetch the full content of the file and number each line
+            nl "$file" > numbered_file_content.txt
 
             # Process the diff for this file
-            awk -v file_content="$file_content" '
+            awk '
               /^@@/ {
                 # Extract the line number range
                 split($0, a, " ")
@@ -62,8 +52,8 @@ jobs:
               }
               /^[+] / {
                 new_file_line_number++
-                # Get the real line number from the file using the associative array
-                real_line_number=line_map[new_file_line_number]
+                # Get the real line number from the actual file content
+                real_line_number=$(grep "^ *$new_file_line_number " numbered_file_content.txt | awk "{print $1}")
                 print "+" real_line_number ": " substr($0, 2)
                 next
               }
