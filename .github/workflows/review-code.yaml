@@ -21,69 +21,41 @@ jobs:
       - name: Fetch All History for Diff
         run: git fetch --all
 
-      # Step 3: Get PR Diff and File Paths
-      - name: Get PR Diff and File Paths
+      # Step 3: Get PR Diff with Context and File Paths
+      - name: Get PR Diff and File Paths with Context
         id: diff
         run: |
           echo "Getting PR diff with 3 lines of context"
           git diff -U3 origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-      # Step 4: Process Each File and Add Real Line Numbers for Added Lines
-      - name: Process Diff and Add Real Line Numbers
+      # Step 4: Echo Diff and File Paths
+      - name: Echo Diff and File Paths
         run: |
-          # Loop through each file in file_paths.txt and process its diff
+          echo "Diff content:"
+          cat diff.txt  # Output the content of diff.txt
+          echo "File paths:"
+          cat file_paths.txt  # Output the content of file_paths.txt
+
+      # Step 5: Send PR Diff for Each File Separately
+      - name: Send PR Diff for Each File Separately
+        run: |
+          diff_content=$(cat diff.txt | jq -Rsa .)
+          # Loop through each file path and send it in a separate request
           while IFS= read -r file; do
             echo "Processing file: $file"
+            file_content=$(git show "${{ github.event.pull_request.head.sha }}:$file" | jq -Rsa .)  # Get the full file content
 
-            # Check if the file exists before processing
-            if [ -f "$file" ]; then
-              # Use 'nl' to number each line in the file
-              nl -ba "$file" > numbered_file_content.txt
-
-              # Read through the diff and process added lines (+)
-              while IFS= read -r diff_line; do
-                if [[ "$diff_line" =~ ^\+[^+] ]]; then
-                  # Extract the added line's content
-                  added_content=$(echo "$diff_line" | cut -c2-)
-
-                  # Find the corresponding line number from the original file
-                  matching_line=$(grep -F "$added_content" numbered_file_content.txt | head -n 1 | awk '{print $1}')
-
-                  if [ -n "$matching_line" ]; then
-                    echo "+$matching_line: $added_content" >> numbered_diff.txt
-                  else
-                    echo "$diff_line" >> numbered_diff.txt
-                  fi
-                else
-                  echo "$diff_line" >> numbered_diff.txt
-                fi
-              done < diff.txt
-            else
-              echo "File $file does not exist."
-            fi
+            # Send the diff and file content to the backend for each file separately
+            curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "diff": '"$diff_content"',
+                "file": "'"$file"'",
+                "file_content": '"$file_content"',
+                "owner": "${{ github.repository_owner }}",
+                "repo": "${{ github.event.pull_request.head.repo.name }}",
+                "prNumber": "${{ github.event.pull_request.number }}",
+                "commitId": "${{ github.event.pull_request.head.sha }}"
+              }'
           done < file_paths.txt
-
-      # Step 5: Echo Diff and File Paths
-      - name: Echo Numbered Diff
-        run: |
-          echo "Numbered Diff content:"
-          cat numbered_diff.txt  # Output the processed diff with added line numbers
-
-      # Step 6: Send PR Diff and File Paths to Backend for Review
-      - name: Send Numbered PR Diff and File Paths to Backend for Review
-        run: |
-          diff_content=$(cat numbered_diff.txt | jq -Rsa .)
-          file_paths=$(cat file_paths.txt | jq -Rsa .)
-
-          echo "Sending Numbered PR Diff for Review"
-          curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "diff": '"$diff_content"',
-            "owner": "${{ github.repository_owner }}",
-            "repo": "${{ github.event.pull_request.head.repo.name }}",
-            "prNumber": "${{ github.event.pull_request.number }}",
-            "commitId": "${{ github.event.pull_request.head.sha }}",
-            "file_paths": '"$file_paths"'
-          }'
