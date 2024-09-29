@@ -54,7 +54,7 @@ jobs:
             curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
               -H "Content-Type: application/json" \
               -d '{
-                "diff": '"$file_diff"',  # This sends only the specific diff for this file
+                "diff": '"$file_diff"',
                 "file": "'"$file"'",
                 "file_content": '"$file_content"',
                 "owner": "${{ github.repository_owner }}",
