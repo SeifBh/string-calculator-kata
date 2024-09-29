@@ -29,19 +29,26 @@ jobs:
           git diff -U3 origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
 
-      # Step 4: Echo Diff and File Paths
-      - name: Echo Diff and File Paths
+      # Step 4: Filter out non-code files from file_paths.txt
+      - name: Filter Non-Code Files
+        id: filter_files
+        run: |
+          # Remove any non-code files (e.g., file_paths.txt)
+          grep -v 'file_paths.txt' file_paths.txt > filtered_file_paths.txt
+
+      # Step 5: Echo Diff and File Paths
+      - name: Echo Diff and Filtered File Paths
         run: |
           echo "Diff content:"
           cat diff.txt  # Output the content of diff.txt
-          echo "File paths:"
-          cat file_paths.txt  # Output the content of file_paths.txt
+          echo "Filtered File paths:"
+          cat filtered_file_paths.txt  # Output the filtered content of file_paths.txt
 
-      # Step 5: Send PR Diff and File Paths to Backend for Review
-      - name: Send Diff and File Paths to Backend for Review
+      # Step 6: Send PR Diff and Filtered File Paths to Backend for Review
+      - name: Send Diff and Filtered File Paths to Backend for Review
         run: |
           diff_content=$(cat diff.txt | jq -Rsa .)
-          file_paths=$(cat file_paths.txt | jq -Rsa .)
+          file_paths=$(cat filtered_file_paths.txt | jq -Rsa .)
 
           echo "Sending PR Diff for Review"
           curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
