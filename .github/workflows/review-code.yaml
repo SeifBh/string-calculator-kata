@@ -36,32 +36,38 @@ jobs:
           while IFS= read -r file; do
             echo "Processing file: $file"
 
-            # Fetch the full content of the file and number each line
-            nl -ba "$file" > numbered_file_content.txt
+            # Check if the file exists before processing
+            if [ -f "$file" ]; then
+              # Fetch the full content of the file and number each line
+              nl -ba "$file" > numbered_file_content.txt
 
-            # Process the diff for this file
-            awk '
-              /^@@/ {
-                # Extract the line number range
-                split($0, a, " ")
-                sub("\\+", "", a[4]) 
-                split(a[4], b, ",")
-                new_file_line_number = b[1] - 1
-                print $0
-                next
-              }
-              /^[+] / {
-                new_file_line_number++
-                real_line_number=$(grep "^ *" new_file_line_number " " numbered_file_content.txt | awk "{print $1}")
-                if (real_line_number) {
-                  print "+" real_line_number ": " substr($0, 2)
-                } else {
-                  print "+" new_file_line_number ": " substr($0, 2)
+              # Process the diff for this file
+              awk '
+                /^@@/ {
+                  # Extract the line number range
+                  split($0, a, " ")
+                  sub("\\+", "", a[4]) 
+                  split(a[4], b, ",")
+                  new_file_line_number = b[1] - 1
+                  print $0
+                  next
                 }
-                next
-              }
-              { print $0 }
-            ' diff.txt > numbered_diff.txt
+                /^[+] / {
+                  new_file_line_number++
+                  # Get the real line number from the numbered file content
+                  real_line_number=$(grep "^ *$new_file_line_number " numbered_file_content.txt | awk "{print $1}")
+                  if (real_line_number != "") {
+                    print "+" real_line_number ": " substr($0, 2)
+                  } else {
+                    print "+" new_file_line_number ": " substr($0, 2)
+                  }
+                  next
+                }
+                { print $0 }
+              ' diff.txt > numbered_diff.txt
+            else
+              echo "File $file does not exist."
+            fi
           done < file_paths.txt
 
       # Step 5: Echo Diff and File Paths
@@ -70,7 +76,7 @@ jobs:
           echo "Numbered Diff content:"
           cat numbered_diff.txt  # Output the processed diff with added line numbers
 
-      # Step 6: Send PR Diff and File Paths to Backend for Review
+      # Step 6: Send Numbered PR Diff and File Paths to Backend for Review
       - name: Send Numbered PR Diff and File Paths to Backend for Review
         run: |
           diff_content=$(cat numbered_diff.txt | jq -Rsa .)
