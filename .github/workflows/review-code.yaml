@@ -27,23 +27,44 @@ jobs:
         run: |
           echo "Getting PR diff with 3 lines of context"
           git diff -U3 origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > diff.txt
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
+
+          # Process diff.txt to add line numbers before each added line
+          echo "Processing diff to add line numbers..."
+          awk '
+            /^@@/ {
+              split($0, a, " ")
+              # Extract the line number where the changes start in the new file
+              sub("\\+", "", a[4]) 
+              split(a[4], b, ",")
+              new_file_line_number = b[1] - 1
+              print $0
+              next
+            }
+            /^[+] / {
+              new_file_line_number++
+              print "+" new_file_line_number ": " substr($0, 2)
+              next
+            }
+            { print $0 }
+          ' diff.txt > numbered_diff.txt
 
       # Step 4: Echo Diff and File Paths
       - name: Echo Diff and File Paths
         run: |
-          echo "Diff content:"
-          cat diff.txt  # Output the content of diff.txt
+          echo "Numbered Diff content:"
+          cat numbered_diff.txt  # Output the processed diff with added line numbers
+
           echo "File paths:"
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} > file_paths.txt
           cat file_paths.txt  # Output the content of file_paths.txt
 
       # Step 5: Send PR Diff and File Paths to Backend for Review
-      - name: Send Diff and File Paths to Backend for Review
+      - name: Send Numbered PR Diff and File Paths to Backend for Review
         run: |
-          diff_content=$(cat diff.txt | jq -Rsa .)
+          diff_content=$(cat numbered_diff.txt | jq -Rsa .)
           file_paths=$(cat file_paths.txt | jq -Rsa .)
 
-          echo "Sending PR Diff for Review"
+          echo "Sending Numbered PR Diff for Review"
           curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
           -H "Content-Type: application/json" \
           -d '{
