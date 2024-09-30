@@ -1,10 +1,13 @@
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
 
 @ToString
+@Setter
+@Getter
 @Data
 public class ReviewResponse {
     private int line;
@@ -13,6 +16,8 @@ public class ReviewResponse {
     @Getter
     String okbb;
 
+    @Setter
+    String blabla;
 
     public ReviewResponse(int line, String comment) {
         this.line = line;
