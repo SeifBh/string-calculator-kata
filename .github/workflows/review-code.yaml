@@ -51,7 +51,7 @@ jobs:
             file_content=$(git show "${{ github.event.pull_request.head.sha }}:$file" | jq -Rsa .)
 
             # Send the diff and file content to the backend for each file separately
-            curl -X POST "https://app5-latest.onrender.com/openai/api/v2/strategy/4/review-pr-diff" \
+            curl -X POST "https://app5-latest.onrender.com/openai/api/v1/strategy/1/review-pr-diff" \
               -H "Content-Type: application/json" \
               -d '{
                 "diff": '"$file_diff"',
